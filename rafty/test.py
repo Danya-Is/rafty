@@ -1,8 +1,7 @@
 import asyncio
 import time
 
-from src.fake_quorum import FakeQuorum
-from src.fake_node import FakeNode
+from rafty import FakeQuorum, FakeNode
 
 
 async def main(loop):

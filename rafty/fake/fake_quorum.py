@@ -1,6 +1,5 @@
-from fake_node import FakeNode
+from rafty import FakeNode
 from typing import List
-import asyncio
 
 
 class FakeQuorum:

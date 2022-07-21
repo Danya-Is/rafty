@@ -1,11 +1,6 @@
-import asyncio
 import time
 
-from src.config import Config
-from src.vote_request import VoteRequest
-from src.vote_response import VoteResponse
-from src.append_entity_request import AppendEntityRequest
-from src.append_entity_response import AppendEntityResponse
+from rafty import Config, VoteRequest, VoteResponse, AppendEntityRequest, AppendEntityResponse
 import random
 
 
@@ -13,7 +8,6 @@ class FakeNode:
     time: float
 
     def __init__(self, node_id: int, is_master=False, is_owner=False):
-        # возможно имя не совсем корректно отражает суть
         self.quorum = None
         self.id = node_id
         self.is_master = is_master
