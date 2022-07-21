@@ -1,6 +1,7 @@
 import time
 
-from rafty import Config, VoteRequest, VoteResponse, AppendEntityRequest, AppendEntityResponse
+from rafty import VoteRequest, VoteResponse, AppendEntityRequest, AppendEntityResponse, Config
+
 import random
 
 

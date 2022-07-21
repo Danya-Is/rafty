@@ -1,8 +1,8 @@
 import asyncio
 import time
 
-from rafty import FakeQuorum, FakeNode
-
+from rafty import FakeNode
+from rafty import FakeQuorum
 
 async def main(loop):
     cluster = FakeQuorum([FakeNode(1, True), FakeNode(2), FakeNode(3)], loop=loop)
