@@ -19,11 +19,6 @@ class AbstractQuorum(ABC):
         self.consensus_number = self.online_nodes_amount // 2 + 1
         self.loop = loop
 
-    async def leader_election(self):
-        for i, (node_id, node) in enumerate(self.nodes.items()):
-            if node.is_online:
-                await node.send_vote_requests()
-
     def get_master(self) -> int:
         return self.master_id
 

@@ -28,8 +28,11 @@ class AbstractNode(ABC):
     def is_online(self):
         return self.is_online
 
-    def set_offline(self):
+    async def set_offline(self):
         self.is_online = False
+        if self.is_master:
+            self.is_master = False
+            await self.leader_election()
 
     def set_online(self):
         self.is_online = True
@@ -38,6 +41,11 @@ class AbstractNode(ABC):
         self.quorum = quorum
         if self.is_master:
             self.quorum.master_id = self.id
+
+    async def leader_election(self):
+        for i, (node_id, node) in enumerate(self.quorum.nodes.items()):
+            if node.is_online:
+                await node.send_vote_requests()
 
     async def send_append_entity_requests(self):
         for i, (node_id, node) in enumerate(self.quorum.nodes.items()):

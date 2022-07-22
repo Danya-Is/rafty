@@ -9,11 +9,8 @@ class FakeQuorum(AbstractQuorum):
 
     # контролируем выведение нод из строя, в рабочем варианте мастер посылает всем фолловерам пинг
     async def set_offline(self, node_id):
-        self.nodes[node_id].set_offline()
         self.online_nodes_amount -= 1
-        if self.nodes[node_id].is_master:
-            self.nodes[node_id].is_master = False
-            await self.leader_election()
+        await self.nodes[node_id].set_offline()
 
     async def set_online(self, node_id):
         self.online_nodes_amount += 1
