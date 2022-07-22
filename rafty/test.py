@@ -2,12 +2,13 @@ import asyncio
 import time
 
 from rafty import FakeNode
-from rafty import FakeQuorum
+from rafty import FakeQuorum, Config
 
 async def main(loop):
-    cluster = FakeQuorum([FakeNode(1, True), FakeNode(2), FakeNode(3)], loop=loop)
+    cluster = FakeQuorum([FakeNode(1, is_master=True, is_owner=True), FakeNode(2), FakeNode(3)], loop=loop)
     t_start = time.time()
     print(cluster.state())
+
     # while True:
     #     if time.time() > t_start + 40:
     #         print(cluster.state())

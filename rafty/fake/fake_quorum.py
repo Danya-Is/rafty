@@ -11,14 +11,12 @@ class FakeQuorum(AbstractQuorum):
     async def set_offline(self, node_id):
         self.nodes[node_id].set_offline()
         self.online_nodes_amount -= 1
-        self.consensus_number = self.online_nodes_amount // 2 + 1
         if self.nodes[node_id].is_master:
             self.nodes[node_id].is_master = False
             await self.leader_election()
 
     async def set_online(self, node_id):
         self.online_nodes_amount += 1
-        self.consensus_number = self.online_nodes_amount // 2 + 1
         self.nodes[node_id].set_online()
 
 
