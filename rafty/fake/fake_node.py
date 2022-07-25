@@ -1,6 +1,6 @@
 import time
 
-from rafty import VoteRequest, AppendEntityRequest, AppendEntityResponse, AbstractNode
+from rafty import Request, Response, AbstractNode
 
 
 class FakeNode(AbstractNode):
@@ -11,12 +11,12 @@ class FakeNode(AbstractNode):
         self.is_owner = is_owner
 
     async def send_vote_request(self, node_id: int):
-        response = await self.quorum.nodes[node_id].vote_response(VoteRequest(self.term, self.id))
-        self.votes += response.get_value()
+        response = await self.quorum.nodes[node_id].response(Request(self.id, self.term, 'RequestVote'))
+        self.votes += response.is_success()
         if response.get_term() > self.term or \
                 (self.quorum.nodes[response.get_id()].is_master and response.get_term() == self.term):
             self.is_candidate = False
             self.votes = 0
 
-    async def send_append_entity_request(self, node_id: int) -> AppendEntityResponse:
-        return await self.quorum.nodes[node_id].append_entity_response(AppendEntityRequest(self.term, self.id))
+    async def send_append_entity_request(self, node_id: int) -> Response:
+        return await self.quorum.nodes[node_id].response(Request(self.id, self.term, 'AppendEntity'))

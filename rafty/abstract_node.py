@@ -2,7 +2,7 @@ import random
 import time
 from abc import ABC, abstractmethod
 
-from rafty import Config, AppendEntityResponse, VoteRequest, VoteResponse, AppendEntityRequest
+from rafty import Config, Request, Response
 
 
 class AbstractNode(ABC):
@@ -58,19 +58,6 @@ class AbstractNode(ABC):
                 self.term = response.get_term()
                 break
 
-    @abstractmethod
-    async def send_append_entity_request(self, node_id: int) -> AppendEntityResponse:
-        pass
-
-    async def append_entity_response(self, request: AppendEntityRequest) -> AppendEntityResponse:
-        if request.get_term() >= self.term:
-            self.term = request.get_term()
-            self.is_candidate = False
-            self.is_master = False
-            return AppendEntityResponse(True, self.term, self.id)
-        else:
-            return AppendEntityResponse(False, self.term, self.id)
-
     async def send_vote_requests(self):
         self.time = time.time()
         self.is_candidate = True
@@ -92,12 +79,32 @@ class AbstractNode(ABC):
             self.quorum.master_id = self.id
 
     @abstractmethod
+    async def send_append_entity_request(self, node_id: int) -> Response:
+        pass
+
+    @abstractmethod
     async def send_vote_request(self, node_id: int):
         pass
 
-    async def vote_response(self, request: VoteRequest) -> VoteResponse:
-        if self.term < request.get_term():
+    async def response(self, request: Request) -> Response:
+        if request.get_term() >= self.term:
             self.term = request.get_term()
-            return VoteResponse(1, self.term, self.id)
+            if request.type is Request.RequestType.RequestVote:
+                return await self.vote_response(request)
+            elif request.type is Request.RequestType.AppendEntity:
+                return await self.append_entity_response(request)
         else:
-            return VoteResponse(0, self.term, self.id)
+            return Response(self.id, self.term, False, request.type.name)
+
+    async def append_entity_response(self, request: Request) -> Response:
+        self.is_candidate = False
+        self.is_master = False
+        return Response(self.id, self.term, True, request.type.name)
+
+    async def vote_response(self, request: Request) -> Response:
+        if request.get_term() > self.term:
+            self.is_candidate = False
+            self.is_master = False
+            return Response(self.id, self.term, True, request.type.name)
+        else:
+            return Response(self.id, self.term, True, request.type.name)

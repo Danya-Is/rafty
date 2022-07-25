@@ -1,8 +1,5 @@
-
-from rafty.messages.append_entity_response import AppendEntityResponse
-from rafty.messages.append_entity_request import AppendEntityRequest
-from rafty.messages.vote_response import VoteResponse
-from rafty.messages.vote_request import VoteRequest
+from rafty.messages.response import Response
+from rafty.messages.request import Request
 from rafty.config import Config
 from rafty.abstract_node import AbstractNode
 from rafty.abstract_quorum import AbstractQuorum

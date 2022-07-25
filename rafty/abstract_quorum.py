@@ -19,6 +19,11 @@ class AbstractQuorum(ABC):
         self.consensus_number = self.online_nodes_amount // 2 + 1
         self.loop = loop
 
+    #     TODO
+    #     создаем цикл событий для ноды (нескольких нод в случае сетевой версии?)
+    async def run(self):
+        pass
+
     def get_master(self) -> int:
         return self.master_id
 
