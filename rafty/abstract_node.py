@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import random
 import time
 from abc import ABC, abstractmethod
@@ -25,10 +26,12 @@ class AbstractNode(ABC):
         self.heartbeat_timer = Timer(Config.heartbeat_interval, self.heartbeat)
         self.election_timer = Timer(self.election_interval, self.election_timeout)
 
+        self.logger = logging.getLogger("rafty.{}".format(__name__))
+
     async def run(self):
         if self.is_master:
-            print("{} become LEADER".format(self.id))
-            print(self.quorum.state())
+            self.logger.debug("{} become LEADER".format(self.id))
+            self.logger.info(self.quorum.state())
             self.heartbeat()
             self.heartbeat_timer.start()
         elif not self.is_candidate:
@@ -61,18 +64,18 @@ class AbstractNode(ABC):
     async def leader_election(self):
         self.election_timer.reset()
         self.vote_responses = 0
-        print("{} become candidate".format(self.id))
+        self.logger.debug("{} become candidate".format(self.id))
         await self.send_vote_requests()
 
     def heartbeat(self):
-        print("heartbeat")
+        self.logger.debug("heartbeat")
         asyncio.ensure_future(self.send_append_entity_requests())
 
     def election_timeout(self):
         # если большинство узлов недоступно
         if self.is_candidate and \
                 self.vote_responses + 1 < self.quorum.consensus_number:
-            print("{} don't see consensus quorum".format(self.id))
+            self.logger.error("{} don't see consensus quorum".format(self.id))
         asyncio.ensure_future(self.leader_election())
 
     async def send_append_entity_requests(self):
@@ -84,13 +87,13 @@ class AbstractNode(ABC):
         await asyncio.wait(requests)
 
     async def send_vote_requests(self):
-        print("send vote requests")
+        self.logger.debug("send vote requests")
         self.time = time.time()
         self.is_candidate = True
         # новый виток выборов
         self.term += 1
         self.votes = 1
-        print(self.quorum.state())
+        self.logger.info(self.quorum.state())
         requests = []
         for i, (node_id, node) in enumerate(self.quorum.nodes.items()):
             if self.id == node_id:
@@ -121,25 +124,25 @@ class AbstractNode(ABC):
         self.heartbeat_timer.stop()
         self.election_timer.reset()
         self.term = request.get_term()
-        print("{} got append entity from {} and reset timer".format(self.id, request.id))
+        self.logger.debug("{} got append entity from {} and reset timer".format(self.id, request.id))
         return Response(self.id, self.term, True, request.type.name)
 
     async def vote_response(self, request: Request) -> Response:
         if request.get_term() > self.term:
             self.is_candidate = False
             self.is_master = False
-            print("{} gave vote for {}".format(self.id, request.id))
+            self.logger.debug("{} gave vote for {}".format(self.id, request.id))
             self.term = request.get_term()
             return Response(self.id, self.term, True, request.type.name)
         else:
-            print("my term = {}, requests = {}".format(self.term, request.term))
+            self.logger.debug("my term = {}, requests = {}".format(self.term, request.term))
             return Response(self.id, self.term, False, request.type.name)
 
     async def on_vote_response(self, response: Response):
         if not self.is_master:
             self.votes += response.is_success()
             self.vote_responses += 1
-            print("{} on vote response from {}".format(self.id, response.id))
+            self.logger.debug("{} on vote response from {}".format(self.id, response.id))
             if response.get_term() > self.term or \
                     (self.quorum.nodes[response.get_id()].is_master and response.get_term() == self.term):
                 self.is_candidate = False

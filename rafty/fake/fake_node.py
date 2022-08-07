@@ -14,7 +14,7 @@ class FakeNode(AbstractNode):
     async def set_offline(self):
         if self.is_online:
             self.is_online = False
-            self.log.info("{} offline".format(self.id))
+            self.logger.info("{} offline".format(self.id))
             if self.is_master:
                 self.is_master = False
                 self.heartbeat_timer.stop()

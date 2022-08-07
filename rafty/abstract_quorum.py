@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from abc import ABC
 from typing import List
 
@@ -18,6 +19,8 @@ class AbstractQuorum(ABC):
         self.consensus_number = self.online_nodes_amount // 2 + 1
         self.loop = loop
         self.config = Config()
+
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
         for i, (node_id, node) in enumerate(self.nodes.items()):
             self.nodes[node_id].set_cluster_conf(self)
