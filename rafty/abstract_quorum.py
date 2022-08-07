@@ -1,7 +1,8 @@
+import asyncio
 from abc import ABC
 from typing import List
 
-from rafty import AbstractNode
+from rafty import AbstractNode, Config
 
 
 class AbstractQuorum(ABC):
@@ -14,15 +15,22 @@ class AbstractQuorum(ABC):
     def __init__(self, nodes: List[AbstractNode], loop):
         self.nodes = {node.get_id(): node for _, node in enumerate(nodes)}
         self.online_nodes_amount = len(nodes)
-        for i, (node_id, node) in enumerate(self.nodes.items()):
-            self.nodes[node_id].set_cluster_conf(self)
         self.consensus_number = self.online_nodes_amount // 2 + 1
         self.loop = loop
+        self.config = Config()
 
-    #     TODO
-    #     создаем цикл событий для ноды (нескольких нод в случае сетевой версии?)
+        for i, (node_id, node) in enumerate(self.nodes.items()):
+            self.nodes[node_id].set_cluster_conf(self)
+
     async def run(self):
-        pass
+        tasks = []
+        for i, (node_id, node) in enumerate(self.nodes.items()):
+            tasks.append(asyncio.create_task(node.run()))
+        await asyncio.wait(tasks)
+
+    def stop(self):
+        for i, (node_id, node) in enumerate(self.nodes.items()):
+            node.stop()
 
     def get_master(self) -> int:
         return self.master_id
@@ -31,8 +39,14 @@ class AbstractQuorum(ABC):
     def state(self) -> str:
         res = "Quorum( "
         for i, (node_id, node) in enumerate(self.nodes.items()):
-            str = "Node(id={id}, is_online={is_online}, is_master={is_master}) "\
-                .format(id=node_id, is_online=node.is_online, is_master=node.is_master)
+            if node.is_master:
+                role = "master"
+            elif node.is_candidate:
+                role = "candidate"
+            else:
+                role = "follower"
+            str = "Node(id={id}, is_online={is_online}, status={status}, term={term}) "\
+                .format(id=node_id, is_online=node.is_online, status=role, term=node.term)
             res += str
 
         res += ")"
