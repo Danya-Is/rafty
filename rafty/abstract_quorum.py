@@ -36,6 +36,9 @@ class AbstractQuorum(ABC):
             if node.is_owner:
                 node.stop()
 
+    def update(self, quorum: dict):
+        self.master_id = quorum['master_id']
+
     def get_master(self) -> int:
         return self.master_id
 

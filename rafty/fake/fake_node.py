@@ -30,8 +30,14 @@ class FakeNode(AbstractNode):
 
     async def send_vote_request(self, node_id: int):
         if self.quorum.nodes[node_id].is_online:
-            await self.on_vote_response(await self.quorum.nodes[node_id].response(Request(self.id, self.term, 'RequestVote')))
+            await self.on_vote_response(await self.quorum.nodes[node_id].response(Request(self.id,
+                                                                                          self.term,
+                                                                                          self.quorum.master_id,
+                                                                                          'RequestVote')))
 
     async def send_append_entity_request(self, node_id: int):
         if self.quorum.nodes[node_id].is_online:
-            await self.on_append_entity_response(await self.quorum.nodes[node_id].response(Request(self.id, self.term, 'AppendEntity')))
+            await self.on_append_entity_response(await self.quorum.nodes[node_id].response(Request(self.id,
+                                                                                                   self.term,
+                                                                                                   self.quorum.master_id,
+                                                                                                   'AppendEntity')))

@@ -6,15 +6,16 @@ class Request:
         RequestVote = 1
         AppendEntity = 2
 
-    def __init__(self, node_id: int, term: int, request_type: str):
+    def __init__(self, node_id: int, term: int, master_id: int, request_type: str):
         self.term = term
-        self.id = node_id
+        self.node_id = node_id
+        self.master_id = master_id
         self.type = self.RequestType[request_type]
 
     def get_term(self):
         return self.term
 
     def get_id(self):
-        return self.id
+        return self.node_id
 
 

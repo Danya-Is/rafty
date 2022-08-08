@@ -25,7 +25,6 @@ class AbstractNode(ABC):
         # уникальный набор идентификаторов узлов, подтвердивших лидерство текущего узла
         self.granted = set()
 
-        self.timeout = None
         self.heartbeat_timer = Timer(Config.heartbeat_interval, self.heartbeat)
         self.election_timer = Timer(self.election_interval, self.election_timeout)
 
@@ -60,7 +59,6 @@ class AbstractNode(ABC):
 
     def set_cluster_conf(self, quorum):
         self.quorum = quorum
-        self.timeout = random.uniform(0, self.quorum.config.max_timeout)
         if self.is_master:
             self.quorum.master_id = self.id
 
@@ -80,6 +78,12 @@ class AbstractNode(ABC):
                 self.vote_responses + 1 < self.quorum.consensus_number:
             self.logger.error("{} don't see consensus quorum".format(self.id))
         asyncio.ensure_future(self.leader_election())
+
+    def to_follower(self):
+        self.is_candidate = False
+        self.is_master = False
+        self.heartbeat_timer.stop()
+        self.election_timer.reset()
 
     async def send_append_entity_requests(self):
         requests = []
@@ -122,19 +126,17 @@ class AbstractNode(ABC):
             return Response(self.id, self.term, False, request.type.name)
 
     async def append_entity_response(self, request: Request) -> Response:
-        self.is_candidate = False
-        self.is_master = False
-        self.heartbeat_timer.stop()
-        self.election_timer.reset()
+        self.quorum.update({'master_id': request.master_id})
+        self.to_follower()
         self.term = request.get_term()
-        self.logger.debug("{} got append entity from {} and reset timer".format(self.id, request.id))
+        self.logger.debug("{} got append entity from {} and reset timer".format(self.id, request.node_id))
         return Response(self.id, self.term, True, request.type.name)
 
     async def vote_response(self, request: Request) -> Response:
         if request.get_term() > self.term:
-            self.is_candidate = False
-            self.is_master = False
-            self.logger.debug("{} gave vote for {}".format(self.id, request.id))
+            self.quorum.update({'master_id': request.master_id})
+            self.to_follower()
+            self.logger.debug("{} gave vote for {}".format(self.id, request.node_id))
             self.term = request.get_term()
             return Response(self.id, self.term, True, request.type.name)
         else:
@@ -145,7 +147,7 @@ class AbstractNode(ABC):
         if not self.is_master:
             self.votes += response.is_success()
             self.vote_responses += 1
-            self.logger.debug("{} on vote response from {}".format(self.id, response.id))
+            self.logger.debug("{} on vote response from {}".format(self.id, response.node_id))
             if response.get_term() > self.term or \
                     (self.quorum.nodes[response.get_id()].is_master and response.get_term() == self.term):
                 self.is_candidate = False
@@ -163,14 +165,12 @@ class AbstractNode(ABC):
         # оставляем нового лидера также в роли кандидата пока он не получит признание от всех работающих нод
         # сразу запускаем лидера без подтверждения, а по необходимости останавливаем
         if self.is_candidate and not response.is_success():
-            self.is_master = False
-            self.is_candidate = False
-            self.heartbeat_timer.stop()
+            self.to_follower()
             self.term = response.get_term()
             await self.run()
         else:
             if response.is_success():
-                self.granted.add(response.id)
+                self.granted.add(response.node_id)
 
             # признание текущего узла как лидера
             if len(self.granted) >= self.quorum.consensus_number:
