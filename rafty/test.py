@@ -2,7 +2,7 @@ import asyncio
 import time
 
 from rafty import FakeNode
-from rafty import FakeQuorum, Config
+from rafty import FakeQuorum
 
 
 async def main(loop):
@@ -24,15 +24,6 @@ async def main(loop):
         elif time.time() > t_start + 10:
             await cluster.set_offline(1)
             # print(cluster.state())
-    # await cluster.set_offline(1)
-    # print("Отключаем ноду 1")
-    # print(cluster.state())
-    # await cluster.set_online(1)
-    # print("Включаем ноду 1")
-    # print(cluster.state())
-    # await cluster.set_offline(cluster.get_master())
-    # print("Отключаем мастера")
-    # print(cluster.state())
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()

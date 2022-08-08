@@ -11,10 +11,13 @@ class AbstractNode(ABC):
     time: float
     is_master: bool
 
-    def __init__(self, node_id: int):
+    def __init__(self, node_id: int, is_owner=False):
         self.quorum = None
         self.id = node_id
         self.is_candidate = False
+        self.is_owner = is_owner
+
+        self.is_online = True
 
         self.term = 0
         self.votes = 0

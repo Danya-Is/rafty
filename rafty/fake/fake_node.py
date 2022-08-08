@@ -6,10 +6,9 @@ from rafty import Request, AbstractNode
 class FakeNode(AbstractNode):
 
     def __init__(self, node_id: int, is_master=False, is_owner=False):
-        super().__init__(node_id)
+        super().__init__(node_id, is_owner)
         self.is_master = is_master
-        self.is_owner = is_owner
-        self.is_online = True
+        self.is_owner = True
 
     async def set_offline(self):
         if self.is_online:
